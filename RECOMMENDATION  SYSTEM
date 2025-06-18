@@ -1,0 +1,37 @@
+# Install required library (run once)
+# pip install scikit-surprise
+
+# Import Libraries
+from surprise import SVD, Dataset, Reader
+from surprise.model_selection import train_test_split
+from surprise import accuracy
+from collections import defaultdict
+
+# Load the built-in MovieLens 100k dataset
+data = Dataset.load_builtin('ml-100k')
+trainset, testset = train_test_split(data, test_size=0.2, random_state=42)
+
+# Build and train the SVD model
+model = SVD()
+model.fit(trainset)
+
+# Make predictions on the test set
+predictions = model.test(testset)
+
+# Evaluate model performance
+accuracy.rmse(predictions)
+
+# Generate top-N recommendations for each user
+def get_top_n(predictions, n=5):
+    top_n = defaultdict(list)
+    for uid, iid, true_r, est, _ in predictions:
+        top_n[uid].append((iid, est))
+    for uid, user_ratings in top_n.items():
+        top_n[uid] = sorted(user_ratings, key=lambda x: x[1], reverse=True)[:n]
+    return top_n
+
+# Get top 5 recommendations for user '196'
+top_n = get_top_n(predictions, n=5)
+print("Top 5 recommendations for user 196:")
+for movie_id, rating in top_n['196']:
+    print(f"Movie ID: {movie_id}, Predicted Rating: {rating:.2f}")
